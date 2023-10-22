@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form id="user-actions-form" method="post" action="{% url 'user_actions' %}">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="">
+  <input type="hidden" name="user_ids" id="selected-user-ids">
+  <div class="container">
+    <h2>User Management</h2>
+    {% if user.is_authenticated %}
+    <div class="toolbar">
+      <button class="btn btn-danger" onclick="performAction('block')">Block</button>
+      <button class="btn btn-primary" onclick="performAction('unblock')">Unblock</button>
+      <button class="btn btn-secondary" onclick="performAction('delete')">Delete</button>
+    </div>
+    {% endif %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all"></th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Last Login</th>
+          <th>Registration Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in object_list %}
+        <tr {% if user == request.user %}style="background-color: lightblue; font-weight: bold;"{% endif %}>
+          <td><input type="checkbox" class="select-item" value="{{ user.id }}"></td>
+          <td>{{ user.first_name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.last_login }}</td>
+          <td>{{ user.date_joined }}</td>
+          <td class="{% if user.status == 'BLOCKED' %}text-danger{% else %}text-primary{% endif %}">
+            {% if user.status == 'BLOCKED' %}
+            Blocked
+            {% else %}
+            Active
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const selectAllCheckbox = document.getElementById('select-all');
+      const selectItemCheckboxes = document.querySelectorAll('.select-item');
+
+      selectAllCheckbox.addEventListener('change', function () {
+        selectItemCheckboxes.forEach(function (checkbox) {
+          checkbox.checked = selectAllCheckbox.checked;
+        });
+      });
+    });
+  </script>
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const selectAllCheckbox = document.getElementById('select-all');
+      const selectItemCheckboxes = document.querySelectorAll('.select-item');
+      const selectedUserIdsInput = document.getElementById('selected-user-ids');
+      const userActionsForm = document.getElementById('user-actions-form');
+
+      selectAllCheckbox.addEventListener('change', function () {
+        selectItemCheckboxes.forEach(function (checkbox) {
+          checkbox.checked = selectAllCheckbox.checked;
+        });
+      });
+
+      function performAction(action) {
+        const selectedUserIds = Array.from(selectItemCheckboxes)
+          .filter(checkbox => checkbox.checked)
+          .map(checkbox => checkbox.value);
+
+        if (selectedUserIds.length === 0) {
+          alert('Select at least one user.');
+          return;
+        }
+
+        // Set the action and user IDs in the form
+        document.querySelector('input[name="action"]').value = action;
+        selectedUserIdsInput.value = selectedUserIds.join(',');
+
+        // Submit the form
+        userActionsForm.submit();
+      }
+
+
+      window.performAction = performAction;
+    });
+  </script>
+
+</form>
+{% endblock %}
